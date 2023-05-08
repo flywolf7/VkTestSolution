@@ -1,0 +1,368 @@
+openapi: 3.0.0
+info:
+  title: OpenAPI specification for Django friends service
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1/
+    description: Dev server
+
+paths:
+  /user/register:
+    post:
+      description: Endpoint to register new user
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: "#/components/schemas/RegisterUserRequest"
+      responses:
+        '200':
+          description: Returns id of registered user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterUserResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/400'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/409'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/500'
+
+  /user/friend:
+    post:
+      description: Endpoint to add new friend
+      tags:
+        - Friend
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: "#/components/schemas/AddFriendRequest"
+      responses:
+        '200':
+          description: Friend add request successfully sent
+          content:
+            application/json:
+              schema: { }
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/400'
+        '404':
+          description: Any requested user not found
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/404'
+        '409':
+          description: User already is your friend
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/409'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/500'
+    delete:
+      description: Endpoint to delete friend
+      tags:
+        - Friend
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: "#/components/schemas/DeleteFriendRequest"
+      responses:
+        '200':
+          description: Friend successfully deleted
+          content:
+            application/json:
+              schema: { }
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/400'
+        '404':
+          description: Any requested user not found
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/404'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/500'
+
+  /user/friend/status:
+    get:
+      description: Endpoint to get is users friend
+      tags:
+        - Friend
+      parameters:
+        - $ref: './api.yaml#/components/parameters/InQueryUserId'
+        - in: query
+          name: checked_user_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Is friends
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/schemas/FriendshipResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/400'
+        '404':
+          description: User with passed ID not found
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/404'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/500'
+
+  /user/friend/list:
+    get:
+      description: Endpoint to get all user friends
+      tags:
+        - Friend
+      parameters:
+        - $ref: './api.yaml#/components/parameters/InQueryUserId'
+      responses:
+        '200':
+          description: Friends list successfully sent
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/schemas/UserFriendsResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/400'
+        '404':
+          description: User with passed ID not found
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/404'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/500'
+
+  /user/friend/request/all:
+    get:
+      description: Endpoint to get user friend requests
+      tags:
+        - FriendRequest
+      parameters:
+        - $ref: './api.yaml#/components/parameters/InQueryUserId'
+      responses:
+        '200':
+          description: Friend add request successfully sent
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/schemas/UserFriendRequestsResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/400'
+        '404':
+          description: User with passed ID not found
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/404'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: './api.yaml#/components/responses/500'
+
+components:
+  schemas:
+    UserFriendsResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          user_id:
+            $ref: './api.yaml#/components/schemas/UserId'
+        required:
+          - user_id
+
+    UserFriendRequestsResponse:
+      type: object
+      properties:
+        from_requests:
+          $ref: './api.yaml#/components/schemas/FromUserRequests'
+        to_requests:
+          $ref: './api.yaml#/components/schemas/ToUserRequests'
+      required:
+        - from_requests
+        - to_requests
+
+    FromUserRequests:
+      type: array
+      items:
+        type: object
+        properties:
+          to:
+            $ref: './api.yaml#/components/schemas/UserId'
+        required:
+          - to
+
+    ToUserRequests:
+      type: array
+      items:
+        type: object
+        properties:
+          from:
+            $ref: './api.yaml#/components/schemas/UserId'
+        required:
+          - from
+
+    RegisterUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    RegisterUserResponse:
+      type: object
+      properties:
+        user_id:
+          $ref: './api.yaml#/components/schemas/UserId'
+      required:
+        - user_id
+
+    AddFriendRequest:
+      type: object
+      properties:
+        from_id:
+          $ref: './api.yaml#/components/schemas/UserId'
+        to_id:
+          $ref: './api.yaml#/components/schemas/UserId'
+      required:
+        - from_id
+        - to_id
+
+    DeleteFriendRequest:
+      type: object
+      properties:
+        user_id:
+          $ref: './api.yaml#/components/schemas/UserId'
+        deleting_id:
+          $ref: './api.yaml#/components/schemas/UserId'
+      required:
+        - user_id
+        - deleting_id
+
+    FriendshipResponse:
+      type: object
+      properties:
+        status:
+          $ref: './api.yaml/#/components/schemas/FriendshipStatus'
+      required:
+        - status
+
+    FriendshipStatus:
+      description: User friendship status with another user
+      type: string
+      enum:
+        - NONE
+        - FRIEND
+        - INCOMING_REQUEST
+        - OUTGOING_REQUEST
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      required:
+        - code
+        - message
+
+    UserId:
+      description: System user identifier
+      type: integer
+      format: int64
+
+  parameters:
+    InQueryUserId:
+        in: query
+        name: user_id
+        schema:
+          type: integer
+        required: true
+
+  responses:
+    400:
+      description: Bad request response
+      '$ref': './api.yaml#/components/schemas/Error'
+    404:
+      description: Not found response
+      '$ref': './api.yaml#/components/schemas/Error'
+    405:
+      description: Method not allowed response
+      '$ref': './api.yaml#/components/schemas/Error'
+    409:
+      description: Conflict response
+      '$ref': './api.yaml#/components/schemas/Error'
+    500:
+      description: Internal server error response
+      '$ref': './api.yaml#/components/schemas/Error'
