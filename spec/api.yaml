@@ -9,7 +9,7 @@ servers:
 paths:
   /user/register:
     post:
-      description: Endpoint to register new user
+      description: Endpoint to register new User
       tags:
         - User
       requestBody:
@@ -20,7 +20,7 @@ paths:
               $ref: "#/components/schemas/RegisterUserRequest"
       responses:
         '200':
-          description: Returns id of registered user
+          description: Returns id of registered User
           content:
             application/json:
               schema:
@@ -44,7 +44,7 @@ paths:
               schema:
                 $ref: './api.yaml#/components/responses/500'
 
-  /user/friend:
+  /friend:
     post:
       description: Endpoint to add new friend
       tags:
@@ -68,7 +68,7 @@ paths:
               schema:
                 $ref: './api.yaml#/components/responses/400'
         '404':
-          description: Any requested user not found
+          description: Any requested User not found
           content:
             application/json:
               schema:
@@ -108,7 +108,7 @@ paths:
               schema:
                 $ref: './api.yaml#/components/responses/400'
         '404':
-          description: Any requested user not found
+          description: Any requested User not found
           content:
             application/json:
               schema:
@@ -120,7 +120,7 @@ paths:
               schema:
                 $ref: './api.yaml#/components/responses/500'
 
-  /user/friend/status:
+  /friend/status:
     get:
       description: Endpoint to get is users friend
       tags:
@@ -158,16 +158,16 @@ paths:
               schema:
                 $ref: './api.yaml#/components/responses/500'
 
-  /user/friend/list:
+  /friend/list:
     get:
-      description: Endpoint to get all user friends
+      description: Endpoint to get all User friends
       tags:
         - Friend
       parameters:
         - $ref: './api.yaml#/components/parameters/InQueryUserId'
       responses:
         '200':
-          description: Friends list successfully sent
+          description: Friend list successfully sent
           content:
             application/json:
               schema:
@@ -191,9 +191,9 @@ paths:
               schema:
                 $ref: './api.yaml#/components/responses/500'
 
-  /user/friend/request/all:
+  /friend/all_requests:
     get:
-      description: Endpoint to get user friend requests
+      description: Endpoint to get User friend requests
       tags:
         - FriendRequest
       parameters:
@@ -317,7 +317,7 @@ components:
         - status
 
     FriendshipStatus:
-      description: User friendship status with another user
+      description: User friendship status with another User
       type: string
       enum:
         - NONE
@@ -338,17 +338,17 @@ components:
         - message
 
     UserId:
-      description: System user identifier
+      description: System User identifier
       type: integer
       format: int64
 
   parameters:
     InQueryUserId:
-        in: query
-        name: user_id
-        schema:
-          type: integer
-        required: true
+      in: query
+      name: user_id
+      schema:
+        type: integer
+      required: true
 
   responses:
     400:
