@@ -7,5 +7,4 @@ urlpatterns = [
     path('status/', friend_status),
     path('list/', friend_list),
     path('all_requests/', all_requests),
-    path('register/', register),
 ]

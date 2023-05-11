@@ -1,6 +1,4 @@
 from django.db import transaction
-from django.http import HttpResponseNotFound
-from django.shortcuts import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -9,8 +7,9 @@ from rest_framework.response import Response
 from User.serializers import *
 
 
+@api_view(['GET'])
 def main_page(request):
-    return HttpResponse(f'<h1>You are not a user, you need to register<h1>')
+    return Response({"Details": "main page, go to /user/register to register new user"}, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -22,7 +21,7 @@ def register(request):
             username, password = data["username"], data["password"]
             new_user = User(username=username, password=password)
             new_user.save()
-            return Response({"registered user": f"{new_user.pk}"})
+            return Response({"registered user id": f"{new_user.pk}", "registered user username": f"{username}"})
         except Exception:
             return Response({"Details": "Bad Request"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -45,6 +44,7 @@ def add_delete_friend(request):
 
         elif FriendRequest.objects.extra(where=[f"from_id_id='{to_id_id}'", f"to_id_id='{from_id_id}'"]):
             atomic_db(
+                request.method,
                 FriendRequest.objects.get(from_id_id=to_id_id, to_id_id=from_id_id, status="SENT"),
                 UserFriend(first_id_id=from_id_id, second_id_id=to_id_id),
                 UserFriend(first_id_id=to_id_id, second_id_id=from_id_id),
@@ -61,7 +61,9 @@ def add_delete_friend(request):
         data = request.GET
         user_id, deleting_id = data['user_id'], data['deleting_id']
         atomic_db(
-            FriendRequest.objects.extra(where=[f"from_id_id='{user_id}' OR to_id_id='{deleting_id}'"]),
+            request.method,
+            FriendRequest.objects.extra(where=[f"from_id_id='{user_id}' OR from_id_id='{deleting_id}'",
+                                               f"to_id_id='{user_id}' OR to_id_id='{deleting_id}'"]),
             UserFriend.objects.extra(where=[f"first_id_id='{user_id}'", f"second_id_id='{deleting_id}'"]),
             UserFriend.objects.extra(where=[f"first_id_id='{deleting_id}'", f"second_id_id='{user_id}'"]),
         )
@@ -73,13 +75,23 @@ def add_delete_friend(request):
 @api_view(['GET'])
 def friend_status(request):
     if request.GET:
-        data = request.data
+        data = request.GET
         user_id, checked_user_id = data['user_id'], data['checked_user_id']
+        from_to = FriendRequest.objects.extra(where=[f"from_id_id='{user_id}'", f"to_id_id='{checked_user_id}'"])
+        to_from = FriendRequest.objects.extra(where=[f"from_id_id='{checked_user_id}'", f"to_id_id='{user_id}'"])
         try:
-            if FriendRequest.objects.extra(where=[f"from_id_id='{user_id}'", f"to_id_id='{checked_user_id}'"]):
-                friendship = f"{user_id} have a request from {checked_user_id}"
-            elif FriendRequest.objects.extra(where=[f"from_id_id='{checked_user_id}'", f"to_id_id='{user_id}'"]):
-                friendship = f"{checked_user_id} have a request from {user_id}"
+            if from_to:
+                if from_to[0].status == "SENT":
+                    friendship = f"{user_id} sent a request for a {checked_user_id}"
+                else:
+                    friendship = f"{user_id} are friends with {checked_user_id}"
+                return Response({"details": friendship})
+            elif to_from:
+                if to_from[0].status == "SENT":
+                    friendship = f"{checked_user_id} sent a request for a {user_id}"
+                else:
+                    friendship = f"{user_id} are friends with {checked_user_id}"
+                return Response({"details": friendship})
             else:
                 friendship = "No one have a requests"
             return Response({"details": friendship})
@@ -102,9 +114,7 @@ def friend_list(request):
         for e in UserFriend.objects.all():
             if e.first_id_id == user_id:
                 friends += "User " + str(e.second_id_id) + ","
-            elif e.second_id_id == user_id:
-                friends += "User " + str(e.first_id_id) + ","
-        return Response({f"{user_id} friends": friends})
+        return Response({f"User {user_id} friends": friends[:-1]})
     else:
         return Response({"details": "Invalid request data"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -122,10 +132,10 @@ def all_requests(request):
         requests_to = ''
         for e in FriendRequest.objects.all():
             if e.status == "SENT":
-                if e.from_id_id == user_id:
-                    requests_from += str(e.to_id_id) + ", "
-                elif e.to_id_id == user_id:
-                    requests_to += str(e.from_id_id) + ", "
+                if e.to_id_id == user_id:
+                    requests_from += str(e.from_id_id) + ", "
+                elif e.from_id_id == user_id:
+                    requests_to += str(e.to_id_id) + ", "
         if len(requests_from) == 0 and len(requests_to) == 0:
             return Response({"details": "you dont have any requests"})
         return Response({
@@ -150,20 +160,20 @@ def atomic_db(req, obj_1, obj_2, obj_3):
 
 
 def page_not_found(request, exception):
-    return HttpResponseNotFound('<h1>Страница не найдена<h1>')
+    return Response({"details": "Page not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 def bad_request(request, exception):
-    return HttpResponseNotFound('<h1>Неверные данные<h1>')
+    return Response({"details": "Bad request"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 def method_not_allowed(request, exception):
-    return HttpResponseNotFound('<h1>Метод не разрешен<h1>')
+    return Response({"details": "Method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 def conflict(request, exception):
-    return HttpResponseNotFound('<h1>Конфликт данных<h1>')
+    return Response({"details": "Conflict response"}, status=status.HTTP_409_CONFLICT)
 
 
 def internal_error(request, *args):
-    return HttpResponseNotFound('<h1>Ошибка<h1>')
+    return Response({"details": "Internal error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
